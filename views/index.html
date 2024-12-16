@@ -4,6 +4,20 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.0/css/bootstrap.min.css"
           integrity="sha384-SI27wrMjH3ZZ89r4o+fGIJtnzkAnFs3E4qz9DIYioCQ5l9Rd/7UAa8DHcaL8jkWt" crossorigin="anonymous">
     <title>Todo</title>
+    <script>
+        function validateForm() {
+            var item = document.forms["taskForm"]["item"].value;
+            if (item == "") {
+                alert("必填");
+                return false;
+            }
+            if (item.length > 200) {
+                alert("字符限制1-200");
+                return false;
+            }
+            return true;
+        }
+    </script>
 </head>
 
 <body>
@@ -13,7 +27,7 @@
         <div class="card">
             <div class="card-header">Add a task</div>
             <div class="card-body">
-                <form action="/add" method="post">
+                <form name="taskForm" action="/add" method="post" onsubmit="return validateForm();">
                     <div class="form-group">
                         <label for="Item">Item</label>
                         <input type="text" class="form-control" name="item" placeholder="What do you want to do?">
