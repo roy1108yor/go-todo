@@ -1,3 +1,14 @@
 .idea/
 logs/
 .env
+*.1024
+!.1024
+.breakpoints
+*.exe
+*.dll
+*.so
+*.dylib
+/bin/
+/pkg/
+/vendor/
+/coverage/

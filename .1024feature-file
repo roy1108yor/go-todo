@@ -1,0 +1,5 @@
+fileChangeLogs:
+  - '.1024'
+  - .gitignore
+  - .env
+  - .env.example
