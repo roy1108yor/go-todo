@@ -53,6 +53,12 @@ func Add(w http.ResponseWriter, r *http.Request) {
 
 	item := r.FormValue("item")
 
+	// Validate input
+	if item == "" || len(item) > 200 {
+		http.Error(w, "Invalid input: must be between 1 and 200 characters.", http.StatusBadRequest)
+		return
+	}
+
 	_, err := database.Exec(`INSERT INTO todos (item) VALUE (?)`, item)
 
 	if err != nil {
