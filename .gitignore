@@ -1,3 +1,9 @@
 .idea/
 logs/
 .env
+.1024*
+!.1024
+.breakpoints
+/bin/
+pkg/
+vendor/
