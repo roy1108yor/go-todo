@@ -50,3 +50,5 @@ You should be able to access this application at `http://127.0.0.1:4040`
 This Project is an example to teach CRUD using the default `database/sql` package and how to serve html templates properly.
 
 If you have anything to add to this, please send in a PR as it will no longer be actively maintained by [me](https://github.com/ichtrojan).
+
+
