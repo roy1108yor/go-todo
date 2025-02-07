@@ -2,6 +2,10 @@
 logs/
 .env
 
+# Clacky Configuration
+.1024*
+!.1024
+.breakpoints
 
 # Go-specific
 /vendor/
@@ -12,3 +16,30 @@ logs/
 *.dylib
 *.test
 *.out
+go.sum
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Build output
+/bin/
+/dist/
+/build/
+
+# Debug files
+debug
+debug.test
+
+# Test coverage
+coverage.txt
+coverage.html
+
+# Environment variables
+.env.local
+.env.*.local
