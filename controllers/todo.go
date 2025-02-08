@@ -22,15 +22,20 @@ func Show(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
+	defer statement.Close()
 
-	var todos []models.Todo
+	todos := make([]models.Todo, 0)
 
 	for statement.Next() {
 		err = statement.Scan(&id, &item, &completed)
 
 		if err != nil {
 			fmt.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
 		}
 
 		todo := models.Todo{
@@ -46,7 +51,10 @@ func Show(w http.ResponseWriter, r *http.Request) {
 		Todos: todos,
 	}
 
-	_ = view.Execute(w, data)
+	if err = view.Execute(w, data); err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func Add(w http.ResponseWriter, r *http.Request) {
