@@ -6,7 +6,7 @@
 
 A simple todolist application written in Go 
 
-## Requirements
+## RequirementsL
 * MySQL installed
 * Go installed
 
