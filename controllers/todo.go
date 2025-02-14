@@ -1,12 +1,13 @@
 package controllers
 
 import (
-	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/ichtrojan/go-todo/config"
-	"github.com/ichtrojan/go-todo/models"
-	"html/template"
-	"net/http"
+ "fmt"
+ "github.com/gorilla/mux"
+ "github.com/ichtrojan/go-todo/config"
+ "github.com/ichtrojan/go-todo/models"
+ "html/template"
+ "net/http"
+ "strings"
 )
 
 var (
@@ -58,16 +59,21 @@ func Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func Add(w http.ResponseWriter, r *http.Request) {
+ item := r.FormValue("item")
 
-	item := r.FormValue("item")
+ // Validate empty input
+ if item == "" || len(strings.TrimSpace(item)) == 0 {
+  http.Redirect(w, r, "/", 301)
+  return
+ }
 
-	_, err := database.Exec(`INSERT INTO todos (item) VALUE (?)`, item)
+ _, err := database.Exec(`INSERT INTO todos (item) VALUE (?)`, item)
 
-	if err != nil {
-		fmt.Println(err)
-	}
+ if err != nil {
+  fmt.Println(err)
+ }
 
-	http.Redirect(w, r, "/", 301)
+ http.Redirect(w, r, "/", 301)
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
