@@ -2,11 +2,6 @@
 logs/
 .env
 
-# Clacky-specific configuration
-.1024*
-!.1024
-.breakpoints
-
 # Go-specific
 /vendor/
 *.exe
