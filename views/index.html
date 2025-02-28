@@ -3,17 +3,155 @@
 <head>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.0/css/bootstrap.min.css"
           integrity="sha384-SI27wrMjH3ZZ89r4o+fGIJtnzkAnFs3E4qz9DIYioCQ5l9Rd/7UAa8DHcaL8jkWt" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <title>Todo</title>
 <style>
+:root {
+    --background: linear-gradient(to bottom, #E6E6FA, #4B0082);
+    --text-color: #212529;
+    --heading-color: orange;
+    --card-bg: #fff;
+    --card-header: #f8f9fa;
+    --border-color: #dee2e6;
+    --btn-primary-bg: #007bff;
+    --btn-primary-color: #fff;
+    --btn-danger-bg: #dc3545;
+    --btn-danger-color: #fff;
+    --input-bg: #fff;
+    --input-text: #495057;
+    --input-border: #ced4da;
+    --muted-text: #6c757d;
+    --completed-text: #6c757d;
+}
+
+.dark-theme {
+    --background: linear-gradient(to bottom, #1a1a2e, #16213e);
+    --text-color: #e1e1e1;
+    --heading-color: #ff9f43;
+    --card-bg: #2a2a3c;
+    --card-header: #16213e;
+    --border-color: #444;
+    --btn-primary-bg: #3282b8;
+    --btn-primary-color: #fff;
+    --btn-danger-bg: #c23616;
+    --btn-danger-color: #fff;
+    --input-bg: #374151;
+    --input-text: #e1e1e1;
+    --input-border: #4b5563;
+    --muted-text: #9ca3af;
+    --completed-text: #9ca3af;
+}
+
 body {
-  background: linear-gradient(to bottom, #E6E6FA, #4B0082);
-  min-height: 100vh;
+    background: var(--background);
+    min-height: 100vh;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.card-header {
+    background-color: var(--card-header);
+    border-color: var(--border-color);
+}
+
+.form-control {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--input-border);
+}
+
+.form-control:focus {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+}
+
+.form-text.text-muted {
+    color: var(--muted-text) !important;
+}
+
+.btn-primary {
+    background-color: var(--btn-primary-bg);
+    border-color: var(--btn-primary-bg);
+    color: var(--btn-primary-color);
+}
+
+.btn-primary:hover {
+    background-color: color-mix(in srgb, var(--btn-primary-bg) 80%, black);
+    border-color: color-mix(in srgb, var(--btn-primary-bg) 80%, black);
+}
+
+.btn-danger {
+    background-color: var(--btn-danger-bg);
+    border-color: var(--btn-danger-bg);
+    color: var(--btn-danger-color);
+}
+
+.btn-danger:hover {
+    background-color: color-mix(in srgb, var(--btn-danger-bg) 80%, black);
+    border-color: color-mix(in srgb, var(--btn-danger-bg) 80%, black);
+}
+
+table {
+    color: var(--text-color) !important;
+}
+
+strike {
+    color: var(--completed-text);
+}
+
+h1 {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--heading-color);
+}
+
+/* Theme Toggle Button */
+.theme-toggle-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.theme-toggle {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+.theme-toggle i {
+    font-size: 20px;
+    color: var(--text-color);
 }
 </style>
 </head>
 
 <body>
-    <div style="margin: 20px;"><h1 style="font-size: 2.5em; font-weight: bold; color: orange;">Todos</h1></div>
+    <div class="theme-toggle-container">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+
+    <div style="margin: 20px;"><h1>Todos</h1></div>
 
     <div class="container">
         <div class="card">
@@ -87,6 +225,38 @@ body {
         }
 
         document.getElementById('todoForm').addEventListener('submit', validateForm);
+
+        // Theme handling
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('i');
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                document.body.classList.remove('dark-theme');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+            localStorage.setItem('theme', theme);
+        }
+
+        function toggleTheme() {
+            if (document.body.classList.contains('dark-theme')) {
+                setTheme('light');
+            } else {
+                setTheme('dark');
+            }
+        }
+
+        // Apply saved theme or default to light
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+
+        // Add event listener to toggle button
+        themeToggle.addEventListener('click', toggleTheme);
     </script>
 </body>
 </html>
