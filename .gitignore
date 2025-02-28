@@ -12,6 +12,8 @@ logs/
 *.test
 *.out
 go.sum
+/bin/
+/tmp/
 
 # IDE and editor files
 *.swp
@@ -38,3 +40,8 @@ coverage.html
 # Environment variables
 .env.local
 .env.*.local
+
+# Clacky-specific
+.1024*
+!.1024
+.breakpoints
