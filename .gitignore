@@ -42,3 +42,12 @@ coverage.html
 # Environment variables
 .env.local
 .env.*.local
+
+# Clacky-related configuration
+.1024*
+!.1024
+.breakpoints
+
+# Temporary files
+/temp/
+*.tmp
