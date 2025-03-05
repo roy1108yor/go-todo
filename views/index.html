@@ -23,7 +23,6 @@
     --muted-text: #6c757d;
     --completed-text: #6c757d;
 }
-
 .dark-theme {
     --background: linear-gradient(to bottom, #1a1a2e, #16213e);
     --text-color: #e1e1e1;
@@ -41,76 +40,62 @@
     --muted-text: #9ca3af;
     --completed-text: #9ca3af;
 }
-
 body {
     background: var(--background);
     min-height: 100vh;
     color: var(--text-color);
     transition: all 0.3s ease;
 }
-
 .card {
     background-color: var(--card-bg);
     border-color: var(--border-color);
     transition: all 0.3s ease;
 }
-
 .card-header {
     background-color: var(--card-header);
     border-color: var(--border-color);
 }
-
 .form-control {
     background-color: var(--input-bg);
     color: var(--input-text);
     border-color: var(--input-border);
 }
-
 .form-control:focus {
     background-color: var(--input-bg);
     color: var(--input-text);
 }
-
 .form-text.text-muted {
     color: var(--muted-text) !important;
 }
-
 .btn-primary {
     background-color: var(--btn-primary-bg);
     border-color: var(--btn-primary-bg);
     color: var(--btn-primary-color);
 }
-
 .btn-primary:hover {
     background-color: color-mix(in srgb, var(--btn-primary-bg) 80%, black);
     border-color: color-mix(in srgb, var(--btn-primary-bg) 80%, black);
 }
-
 .btn-danger {
     background-color: var(--btn-danger-bg);
     border-color: var(--btn-danger-bg);
     color: var(--btn-danger-color);
 }
-
 .btn-danger:hover {
     background-color: color-mix(in srgb, var(--btn-danger-bg) 80%, black);
     border-color: color-mix(in srgb, var(--btn-danger-bg) 80%, black);
 }
-
 table {
     color: var(--text-color) !important;
 }
-
 strike {
     color: var(--completed-text);
 }
-
 h1 {
     font-size: 2.5em;
     font-weight: bold;
     color: var(--heading-color);
 }
-
 /* Theme Toggle Button */
 .theme-toggle-container {
     position: fixed;
@@ -118,7 +103,6 @@ h1 {
     right: 20px;
     z-index: 1000;
 }
-
 .theme-toggle {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -132,16 +116,13 @@ h1 {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
 }
-
 .theme-toggle:hover {
     transform: scale(1.1);
 }
-
 .theme-toggle i {
     font-size: 20px;
     color: var(--text-color);
 }
-
 .github-container {
     position: fixed;
     bottom: 20px;
@@ -154,12 +135,10 @@ h1 {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
 }
-
 .github-container:hover {
     transform: scale(1.1);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
-
 .github-container a {
     display: flex;
     align-items: center;
@@ -168,6 +147,24 @@ h1 {
     height: 100%;
     color: inherit;
     text-decoration: none;
+}
+/* Add edit button styles */
+.btn-edit {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: var(--btn-primary-color);
+    margin-left: 5px;
+}
+.btn-edit:hover {
+    background-color: #218838;
+    border-color: #218838;
+}
+/* Add edit mode styles */
+.edit-mode {
+    background-color: #f8f9fa;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    padding: 5px;
 }
 </style>
 </head>
@@ -220,15 +217,17 @@ h1 {
                                 <td>
                                     <button class="btn btn-primary" disabled>Complete</button>
                                     <button class="btn btn-danger" disabled>Delete</button>
+                                    <button class="btn btn-edit" onclick="toggleEditMode({{.Id}})">Edit</button>
                                 </td>
                             </tr>
                         {{else}}
-                            <tr>
+                            <tr id="task-{{.Id}}">
                                 <td>{{.Item}}</td>
                                 <td>Not Completed</td>
                                 <td>
                                     <a href="/complete/{{ .Id}}"><button class="btn btn-primary">Complete</button></a>
                                     <a href="/delete/{{ .Id}}"><button class="btn btn-danger">Delete</button></a>
+                                    <button class="btn btn-edit" onclick="toggleEditMode({{.Id}})">Edit</button>
                                 </td>
                             </tr>
                         {{end}}
@@ -244,53 +243,137 @@ h1 {
         </a>
     </div>
     <script>
-        function validateForm(event) {
-            const itemInput = document.getElementById('itemInput');
-            const errorMsg = document.getElementById('errorMsg');
+function validateForm(event) {
+    const itemInput = document.getElementById('itemInput');
+    const errorMsg = document.getElementById('errorMsg');
 
-            if (!itemInput.value.trim()) {
-                event.preventDefault();
-                errorMsg.style.display = 'block';
-                return false;
-            }
-            errorMsg.style.display = 'none';
-            return true;
+    if (!itemInput.value.trim()) {
+        event.preventDefault();
+        errorMsg.style.display = 'block';
+        return false;
+    }
+    errorMsg.style.display = 'none';
+    return true;
+}
+
+document.getElementById('todoForm').addEventListener('submit', validateForm);
+
+// Theme handling
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = themeToggle.querySelector('i');
+
+function setTheme(theme) {
+    if (theme === 'dark') {
+        document.body.classList.add('dark-theme');
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+    } else {
+        document.body.classList.remove('dark-theme');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+    }
+    localStorage.setItem('theme', theme);
+}
+
+function toggleTheme() {
+    if (document.body.classList.contains('dark-theme')) {
+        setTheme('light');
+    } else {
+        setTheme('dark');
+    }
+}
+
+// Apply saved theme or default to light
+const savedTheme = localStorage.getItem('theme') || 'light';
+setTheme(savedTheme);
+
+// Add event listener to toggle button
+themeToggle.addEventListener('click', toggleTheme);
+
+// Add edit mode handling
+function toggleEditMode(taskId) {
+    const taskRow = document.querySelector(`#task-${taskId}`);
+    const taskContent = taskRow.querySelector('td:first-child');
+    const buttons = taskRow.querySelector('td:last-child');
+    
+    // Only allow editing non-completed tasks
+    if (buttons.querySelector('.btn-primary').disabled) return;
+
+    const isEditMode = taskContent.classList.contains('edit-mode');
+    
+    if (!isEditMode) {
+        const originalText = taskContent.textContent;
+        taskContent.dataset.original = originalText;
+        
+        // Switch to edit mode
+        taskContent.innerHTML = `
+            <input type="text" 
+                   class="form-control form-control-sm" 
+                   value="${originalText}"
+                   onkeypress="if (event.key === 'Enter') { saveChanges(${taskId}); this.blur(); }">
+        `;
+        taskContent.classList.add('edit-mode');
+        
+        // Show edit controls
+        const editControls = document.createElement('div');
+        editControls.innerHTML = `
+            <button class="btn btn-secondary btn-sm" onclick="cancelEditMode(${taskId})">Cancel</button>
+            <button class="btn btn-success btn-sm" onclick="saveChanges(${taskId})">OK</button>
+        `;
+        buttons.innerHTML = '';
+        buttons.appendChild(editControls);
+    }
+}
+
+function cancelEditMode(taskId) {
+    const taskRow = document.querySelector(`#task-${taskId}`);
+    const taskContent = taskRow.querySelector('td:first-child');
+    const buttons = taskRow.querySelector('td:last-child');
+    
+    // Restore original content
+    taskContent.textContent = taskContent.dataset.original;
+    taskContent.classList.remove('edit-mode');
+    
+    // Restore original buttons
+    buttons.innerHTML = `
+        <a href="/complete/${taskId}"><button class="btn btn-primary">Complete</button></a>
+        <a href="/delete/${taskId}"><button class="btn btn-danger">Delete</button></a>
+        <button class="btn btn-edit" onclick="toggleEditMode(${taskId})">Edit</button>
+    `;
+}
+
+function saveChanges(taskId) {
+    const taskRow = document.querySelector(`#task-${taskId}`);
+    const taskContent = taskRow.querySelector('td:first-child');
+    const input = taskContent.querySelector('input[type="text"]');
+    const newValue = input.value.trim();
+
+    if (!newValue) {
+        alert('Task content cannot be empty');
+        return;
+    }
+
+    fetch(`/update/${taskId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ item: newValue })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
         }
-
-        document.getElementById('todoForm').addEventListener('submit', validateForm);
-
-        // Theme handling
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = themeToggle.querySelector('i');
-
-        function setTheme(theme) {
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
-            } else {
-                document.body.classList.remove('dark-theme');
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
-            }
-            localStorage.setItem('theme', theme);
-        }
-
-        function toggleTheme() {
-            if (document.body.classList.contains('dark-theme')) {
-                setTheme('light');
-            } else {
-                setTheme('dark');
-            }
-        }
-
-        // Apply saved theme or default to light
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        setTheme(savedTheme);
-
-        // Add event listener to toggle button
-        themeToggle.addEventListener('click', toggleTheme);
-    </script>
+        taskContent.textContent = newValue;
+        cancelEditMode(taskId);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to save changes. Please try again.');
+    });
+}
+</script>
 </body>
 </html>
-```
