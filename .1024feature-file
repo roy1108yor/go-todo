@@ -1,0 +1,5 @@
+fileChangeLogs:
+  - .env
+  - '.1024'
+  - logs
+  - logs/error.log
