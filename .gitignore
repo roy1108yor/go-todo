@@ -46,8 +46,3 @@ coverage.html
 # Temporary files
 /temp/
 *.tmp
-
-# Clacky-related configuration
-.1024*
-!.1024
-.breakpoints
