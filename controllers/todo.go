@@ -9,18 +9,22 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 var (
-	id        int
-	item      string
-	completed int
-	view      = template.Must(template.ParseFiles("./views/index.html"))
-	database  = config.Database()
+	id          int
+	item        string
+	completed   int
+	createdAt   time.Time
+	updatedAt   time.Time
+	completedAt *time.Time
+	view        = template.Must(template.ParseFiles("./views/index.html"))
+	database    = config.Database()
 )
 
 func Show(w http.ResponseWriter, r *http.Request) {
-	statement, err := database.Query(`SELECT * FROM todos`)
+	statement, err := database.Query(`SELECT id, item, completed, created_at, updated_at, completed_at FROM todos`)
 
 	if err != nil {
 		fmt.Println(err)
@@ -29,16 +33,19 @@ func Show(w http.ResponseWriter, r *http.Request) {
 	var todos []models.Todo
 
 	for statement.Next() {
-		err = statement.Scan(&id, &item, &completed)
+		err = statement.Scan(&id, &item, &completed, &createdAt, &updatedAt, &completedAt)
 
 		if err != nil {
 			fmt.Println(err)
 		}
 
 		todo := models.Todo{
-			Id:        id,
-			Item:      item,
-			Completed: completed,
+			Id:          id,
+			Item:        item,
+			Completed:   completed,
+			CreatedAt:   createdAt,
+			UpdatedAt:   updatedAt,
+			CompletedAt: completedAt,
 		}
 
 		todos = append(todos, todo)
@@ -52,10 +59,11 @@ func Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func Add(w http.ResponseWriter, r *http.Request) {
-
 	item := r.FormValue("item")
+	currentTime := time.Now()
 
-	_, err := database.Exec(`INSERT INTO todos (item) VALUE (?)`, item)
+	_, err := database.Exec(`INSERT INTO todos (item, created_at, updated_at) VALUE (?, ?, ?)`, 
+		item, currentTime, currentTime)
 
 	if err != nil {
 		fmt.Println(err)
@@ -80,8 +88,10 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 func Complete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	completedTime := time.Now()
 
-	_, err := database.Exec(`UPDATE todos SET completed = 1 WHERE id = ?`, id)
+	_, err := database.Exec(`UPDATE todos SET completed = 1, completed_at = ?, updated_at = ? WHERE id = ?`, 
+		completedTime, completedTime, id)
 
 	if err != nil {
 		fmt.Println(err)
@@ -118,15 +128,15 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create todo object with updated data
-	// Keep completed status as is
 	todo := models.Todo{
 		Id:        id,
 		Item:      todoData.Item,
-		Completed: 0, // When editing, we keep completed status unchanged (assuming incomplete)
+		Completed: 0, // When editing, we keep completed status unchanged
+		UpdatedAt: time.Now(),
 	}
 
 	// Update the todo in database
-	err = models.UpdateTodo(todo)
+	err = updateTodo(todo)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update todo"})
@@ -137,4 +147,12 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 	// Return success response
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Todo updated successfully"})
+}
+
+// updateTodo updates an existing todo item in the database
+func updateTodo(todo models.Todo) error {
+	_, err := database.Exec(`UPDATE todos SET item = ?, updated_at = ? WHERE id = ?`, 
+		todo.Item, todo.UpdatedAt, todo.Id)
+
+	return err
 }

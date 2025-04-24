@@ -46,6 +46,9 @@
                     <thead>
                     <tr>
                         <th scope="col">Item</th>
+                        <th scope="col">Created</th>
+                        <th scope="col">Updated</th>
+                        <th scope="col">Completed</th>
                         <th scope="col">Status</th>
                         <th scope="col">Action</th>
                     </tr>
@@ -55,6 +58,13 @@
                         {{if .Completed}}
                             <tr>
                                 <td><strike>{{.Item}}</strike></td>
+                                <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                                <td>{{.UpdatedAt.Format "2006-01-02 15:04"}}</td>
+                                <td>
+                                    {{if .CompletedAt}}
+                                        {{.CompletedAt.Format "2006-01-02 15:04"}}
+                                    {{else}}-{{end}}
+                                </td>
                                 <td>Completed</td>
                                 <td>
                                     <button class="btn btn-primary" disabled>Complete</button>
@@ -69,6 +79,9 @@
                                         <input type="text" class="form-control todo-edit-input" value="{{.Item}}">
                                     </div>
                                 </td>
+                                <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                                <td>{{.UpdatedAt.Format "2006-01-02 15:04"}}</td>
+                                <td>-</td>
                                 <td>Not Completed</td>
                                 <td>
                                     <div class="view-mode">

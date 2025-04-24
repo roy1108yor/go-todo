@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/ichtrojan/go-todo/config"
 	"github.com/ichtrojan/go-todo/routes"
 	"github.com/ichtrojan/thoth"
 	"github.com/joho/godotenv"
@@ -24,6 +25,9 @@ func main() {
 		logger.Log(errors.New("PORT not set in .env"))
 		log.Fatal("PORT not set in .env")
 	}
+
+	// Run database migrations to add timestamp columns
+	config.MigrateDB()
 
 	err := http.ListenAndServe(":"+port, routes.Init())
 
