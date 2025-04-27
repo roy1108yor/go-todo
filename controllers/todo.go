@@ -5,97 +5,132 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/ichtrojan/go-todo/config"
+	"github.com/ichtrojan/go-todo/middleware"
 	"github.com/ichtrojan/go-todo/models"
 	"html/template"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 var (
-	id        int
-	item      string
-	completed int
-	createdAt time.Time
-	view      = template.Must(template.ParseFiles("./views/index.html"))
-	database  = config.Database()
+	view     = template.Must(template.ParseFiles("./views/index.html"))
+	database = config.Database()
 )
 
-func Show(w http.ResponseWriter, r *http.Request) {
-	statement, err := database.Query(`SELECT id, item, completed, created_at FROM todos`)
+// GetTodosHandler displays all todos for the current user
+func GetTodosHandler(w http.ResponseWriter, r *http.Request) {
+	// Get current user from context
+	user, ok := middleware.GetUser(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
+	// Get todos for the current user
+	todos, err := models.GetAllTodos(user.ID)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	var todos []models.Todo
-
-	for statement.Next() {
-		err = statement.Scan(&id, &item, &completed, &createdAt)
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		todo := models.Todo{
-			Id:        id,
-			Item:      item,
-			Completed: completed,
-			CreatedAt: createdAt,
-		}
-
-		todos = append(todos, todo)
-	}
-
+	// Prepare view data
 	data := models.View{
 		Todos: todos,
+		User:  user,
 	}
 
 	_ = view.Execute(w, data)
 }
 
-func Add(w http.ResponseWriter, r *http.Request) {
+// CreateTodoHandler adds a new todo item for the current user
+func CreateTodoHandler(w http.ResponseWriter, r *http.Request) {
+	// Get current user from context
+	user, ok := middleware.GetUser(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	item := r.FormValue("item")
-	currentTime := time.Now()
 
-	_, err := database.Exec(`INSERT INTO todos (item, created_at) VALUE (?, ?)`, item, currentTime)
+	// Create todo with user association
+	todo := models.Todo{
+		Item: item,
+		Completed: 0,
+		UserID: user.ID,
+	}
 
+	err := models.CreateTodo(todo)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	http.Redirect(w, r, "/", 301)
+	http.Redirect(w, r, "/", http.StatusMovedPermanently)
 }
 
-func Delete(w http.ResponseWriter, r *http.Request) {
+// DeleteTodoHandler removes a todo item if it belongs to the current user
+func DeleteTodoHandler(w http.ResponseWriter, r *http.Request) {
+	// Get current user from context
+	user, ok := middleware.GetUser(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
-	id := vars["id"]
-
-	_, err := database.Exec(`DELETE FROM todos WHERE id = ?`, id)
-
+	idStr := vars["id"]
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		fmt.Println(err)
+		http.Error(w, "Invalid todo ID", http.StatusBadRequest)
+		return
 	}
 
-	http.Redirect(w, r, "/", 301)
+	// Delete todo, this will verify ownership
+	err = models.DeleteTodo(id, user.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusMovedPermanently)
 }
 
-func Complete(w http.ResponseWriter, r *http.Request) {
+// CompleteTodoHandler marks a todo item as complete if it belongs to the current user
+func CompleteTodoHandler(w http.ResponseWriter, r *http.Request) {
+	// Get current user from context
+	user, ok := middleware.GetUser(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
-	id := vars["id"]
-
-	_, err := database.Exec(`UPDATE todos SET completed = 1 WHERE id = ?`, id)
-
+	idStr := vars["id"]
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		fmt.Println(err)
+		http.Error(w, "Invalid todo ID", http.StatusBadRequest)
+		return
 	}
 
-	http.Redirect(w, r, "/", 301)
+	// Complete todo, this will verify ownership
+	err = models.CompleteTodo(id, user.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusMovedPermanently)
 }
 
-// UpdateTodo handles the PUT request to update an existing todo item
-func UpdateTodo(w http.ResponseWriter, r *http.Request) {
+// UpdateTodoHandler handles the PUT request to update an existing todo item
+func UpdateTodoHandler(w http.ResponseWriter, r *http.Request) {
+	// Get current user from context
+	user, ok := middleware.GetUser(r)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
 	// Set response content type
 	w.Header().Set("Content-Type", "application/json")
 
@@ -121,28 +156,21 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get the existing todo to preserve the created_at value
-	var existingTodo models.Todo
-	err = database.QueryRow("SELECT id, item, completed, created_at FROM todos WHERE id = ?", id).Scan(
-		&existingTodo.Id, 
-		&existingTodo.Item, 
-		&existingTodo.Completed,
-		&existingTodo.CreatedAt,
-	)
-	
+	// Try to get the existing todo to verify ownership
+	existingTodo, err := models.GetTodoByID(id, user.ID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to fetch existing todo"})
-		fmt.Println(err)
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
 	// Create todo object with updated data
 	todo := models.Todo{
-		Id:        id,
-		Item:      todoData.Item,
+		Id: id,
+		Item: todoData.Item,
 		Completed: existingTodo.Completed,
 		CreatedAt: existingTodo.CreatedAt, // Preserve the original creation time
+		UserID: user.ID,                // Set the user ID for ownership verification
 	}
 
 	// Update the todo in database

@@ -14,12 +14,52 @@
         .editing .view-mode {
             display: none;
         }
-        body { background: linear-gradient(to bottom, #90EE90, #006400); }
+        body { 
+            background: linear-gradient(to bottom, #90EE90, #006400); 
+            padding-top: 80px; /* Add padding to avoid overlap with fixed header */
+        }
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid #dee2e6;
+            min-height: 60px;
+        }
+        .app-header h1 {
+            color: green;
+            margin: 0; /* Reset margin for h1 inside header */
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .user-info span {
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .user-info .btn-logout {
+             /* Add custom styles if needed */
+        }
     </style>
 </head>
 
 <body>
-    <div><h1 style="color: green; margin-left: 20px; margin-top: 20px;">Todos</h1></div>
+    <div class="app-header">
+        <h1>Todos</h1>
+        {{if .User.ID}}
+        <div class="user-info">
+            <span>Welcome, {{.User.Username}}!</span>
+            <a href="/logout"><button class="btn btn-outline-danger btn-sm btn-logout">Logout</button></a>
+        </div>
+        {{end}}
+    </div>
 
     <div class="container">
         <div class="card">
@@ -164,18 +204,28 @@
                     // Remove the outside click handler
                     document.removeEventListener('click', handleOutsideClick);
                 } else {
-                    console.error('Failed to update todo');
-                    // Optionally show an error message
+                    // Handle potential errors like unauthorized (401) or forbidden (403)
+                    if (response.status === 401 || response.status === 403) {
+                         alert('Authentication error. Please log in again.');
+                         window.location.href = '/login'; // Redirect to login
+                    } else {
+                         alert('Failed to update todo. Please try again.');
+                         console.error('Failed to update todo');
+                         cancelEdit(id); // Revert changes on failure
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                alert('An error occurred while saving. Please try again.');
+                cancelEdit(id); // Revert changes on network error
             });
         }
 
         // Handle cancel button click
         function cancelEdit(id) {
             const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (!row) return; // Element might have been removed
             
             // Reset input value to original text
             const originalText = row.querySelector('.view-mode').textContent;
@@ -193,10 +243,8 @@
         function handleOutsideClick(event) {
             if (currentEditingId !== null) {
                 const row = document.querySelector(`tr[data-id="${currentEditingId}"]`);
-                const clickedInsideRow = row.contains(event.target);
-                
-                // If click is outside the row being edited
-                if (!clickedInsideRow) {
+                // Check if the row still exists and if the click was outside the row
+                if (row && !row.contains(event.target)) {
                     cancelEdit(currentEditingId);
                 }
             }
