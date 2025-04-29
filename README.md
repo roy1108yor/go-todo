@@ -1,7 +1,7 @@
 第一个issue thread修改的代码
 # Go Todo
 111111
-
+quick-提交commit后删除2
 ![hero](https://res.cloudinary.com/ichtrojan/image/upload/v1574958373/Screenshot_2019-11-28_at_17.22.25_gyegdr.png)
 
 ## Introduction
